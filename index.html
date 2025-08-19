@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Clock Controller</title>
+    <!-- Import the built IframeClient library -->
+    <script src="../dist/iframe/iframe-client.iife.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #f8fafc;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+      }
+
+      .controls {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+        max-width: 320px;
+        width: 100%;
+      }
+
+      .input-group {
+        margin-bottom: 18px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        color: #475569;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      input {
+        width: 100%;
+        padding: 8px 12px;
+        margin-bottom: 0;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        background: #f8fafc;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        background: white;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+      }
+
+      .time-inputs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .time-inputs input {
+        margin-bottom: 0;
+        text-align: center;
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      button {
+        flex: 1;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      button::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.2),
+          transparent
+        );
+        transition: left 0.3s;
+      }
+
+      button:hover::before {
+        left: 100%;
+      }
+
+      .play-btn {
+        background: #10b981;
+        color: white;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+      }
+
+      .play-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      }
+
+      .play-btn.playing {
+        background: #ef4444;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+      }
+
+      .play-btn.playing:hover {
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+      }
+
+      .reset-btn {
+        background: #f59e0b;
+        color: white;
+        box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+      }
+
+      .reset-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+      }
+
+      .live-indicator {
+        padding: 6px 12px;
+        margin-bottom: 18px;
+        border-radius: 6px;
+        text-align: center;
+        color: white;
+        background: #10b981;
+        display: none;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 12px;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+      }
+
+      .live-indicator.active {
+        display: block;
+        background: #ef4444;
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.8;
+        }
+      }
+
+      .template-info {
+        margin-top: 18px;
+        padding: 12px;
+        background: #f1f5f9;
+        border-radius: 8px;
+        font-size: 0.85em;
+        border: 1px solid #e2e8f0;
+      }
+
+      .template-info h3 {
+        margin: 0 0 10px 0;
+        color: #475569;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .template-info p {
+        margin: 4px 0;
+        color: #64748b;
+      }
+
+      .template-info .metadata {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 6px 12px;
+      }
+
+      .template-info .metadata span:first-child {
+        font-weight: 600;
+        color: #475569;
+      }
+
+      .current-time {
+        background: #eff6ff;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 18px;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .current-time::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6, #3b82f6);
+        animation: none; /* Default: no animation */
+      }
+
+      .current-time.playing::before {
+        animation: shimmer 2s infinite; /* Only animate when playing */
+      }
+
+      @keyframes shimmer {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
+      .current-time div {
+        position: relative;
+        z-index: 1;
+      }
+
+      #currentTimeDisplay {
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      /* Responsive design */
+      @media (max-width: 480px) {
+        .controls {
+          padding: 15px;
+          margin: 5px;
+        }
+
+        .time-inputs {
+          gap: 8px;
+        }
+
+        .button-group {
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        button {
+          padding: 8px 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <div id="liveIndicator" class="live-indicator">LIVE</div>
+
+      <div class="current-time">
+        <div>Current Time: <span id="currentTimeDisplay">00:00</span></div>
+      </div>
+
+      <div class="input-group">
+        <div class="time-inputs">
+          <div>
+            <label for="minutes">Minutes</label>
+            <input
+              type="number"
+              id="minutes"
+              min="0"
+              max="59"
+              placeholder="0"
+              autocomplete="off"
+            />
+          </div>
+          <div>
+            <label for="seconds">Seconds</label>
+            <input
+              type="number"
+              id="seconds"
+              min="0"
+              max="59"
+              placeholder="0"
+              autocomplete="off"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button id="playBtn" class="play-btn">Play</button>
+        <button id="resetBtn" class="reset-btn">Reset</button>
+      </div>
+
+      <div id="templateInfo" class="template-info" style="display: none">
+        <h3>Template Information</h3>
+        <div class="metadata"></div>
+      </div>
+    </div>
+
+    <script>
+      // Get iframeId from URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const iframeId = urlParams.get("iframeId")??"test"; // fallback for testing
+
+      // Initialize the iframe client with the ID from URL
+      const client = new IframeClient(iframeId);
+      let currentPayload = {
+        mainClock: { UTC: 0, isRunning: false, value: 0 }
+      };
+      let updateTimeout = null;
+      let currentSubcomposition = null;
+      let isPlaying = false;
+      let timerInterval = null;
+
+      // Update the time display
+      function updateTimeDisplay(value) {
+        const minutes = Math.floor(value / 60000); // Convert ms to minutes
+        const seconds = Math.floor((value % 60000) / 1000); // Convert remaining ms to seconds
+        const display = `${minutes.toString().padStart(2, "0")}:${seconds
+          .toString()
+          .padStart(2, "0")}`;
+        document.getElementById("currentTimeDisplay").textContent = display;
+      }
+
+      // Update input fields to match current time
+      function updateInputFields(value) {
+        const minutes = Math.floor(value / 60000); // Convert ms to minutes
+        const seconds = Math.floor((value % 60000) / 1000); // Convert remaining ms to seconds
+        document.getElementById("minutes").value = minutes;
+        document.getElementById("seconds").value = seconds;
+      }
+
+      // Start the timer
+      function startTimer() {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+        }
+
+        timerInterval = setInterval(() => {
+          currentPayload.mainClock.value += 1000; // Increment by 1000ms (1 second)
+          updateTimeDisplay(currentPayload.mainClock.value);
+          updateInputFields(currentPayload.mainClock.value);
+        }, 1000); // Update every second
+      }
+
+      // Stop the timer
+      function stopTimer() {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+      }
+
+      // Debounced update function to prevent too many updates
+      function debouncedUpdate(payload) {
+        if (updateTimeout) {
+          clearTimeout(updateTimeout);
+        }
+        updateTimeout = setTimeout(() => {
+          client.setPayload(payload);
+        }, 100); // Wait 100ms after last keystroke before updating
+      }
+
+      // Handle time input changes
+      function handleTimeInputChange() {
+        const minutes = parseInt(document.getElementById("minutes").value) || 0;
+        const seconds = parseInt(document.getElementById("seconds").value) || 0;
+        const totalMilliseconds = (minutes * 60 + seconds) * 1000; // Convert to milliseconds
+
+        currentPayload.mainClock.value = totalMilliseconds;
+        updateTimeDisplay(totalMilliseconds);
+        debouncedUpdate(currentPayload);
+      }
+
+      // Handle play/stop button
+      function handlePlayStop() {
+        isPlaying = !isPlaying;
+        currentPayload.mainClock.isRunning = isPlaying;
+
+        const playBtn = document.getElementById("playBtn");
+        const currentTimeElement = document.querySelector(".current-time");
+
+        if (isPlaying) {
+          playBtn.textContent = "Stop";
+          playBtn.classList.add("playing");
+          currentTimeElement.classList.add("playing");
+          currentPayload.mainClock.UTC = Date.now(); // Set UTC timestamp when starting
+          setTimeout(startTimer, 1000); // Start counting up
+        } else {
+          playBtn.textContent = "Play";
+          playBtn.classList.remove("playing");
+          currentTimeElement.classList.remove("playing");
+          stopTimer(); // Stop counting up
+        }
+
+        debouncedUpdate(currentPayload);
+      }
+
+      // Handle reset button
+      function handleReset() {
+        isPlaying = false;
+        stopTimer(); // Stop the timer
+
+        currentPayload.mainClock = {
+          UTC: 0,
+          isRunning: false,
+          value: 0
+        };
+
+        const playBtn = document.getElementById("playBtn");
+        const currentTimeElement = document.querySelector(".current-time");
+        playBtn.textContent = "Play";
+        playBtn.classList.remove("playing");
+        currentTimeElement.classList.remove("playing");
+
+        updateTimeDisplay(0);
+        updateInputFields(0);
+        debouncedUpdate(currentPayload);
+      }
+
+      // Set up input listeners
+      document
+        .getElementById("minutes")
+        .addEventListener("input", handleTimeInputChange);
+      document
+        .getElementById("seconds")
+        .addEventListener("input", handleTimeInputChange);
+
+      // Set up button listeners
+      document
+        .getElementById("playBtn")
+        .addEventListener("click", handlePlayStop);
+      document
+        .getElementById("resetBtn")
+        .addEventListener("click", handleReset);
+
+      // Handle initial data when iframe loads
+      client.onInitialData((data) => {
+        console.log("Initial data received:", data);
+        if (data.payload && data.payload.mainClock) {
+          currentPayload = { ...data.payload };
+          const clockValue = data.payload.mainClock.value || 0;
+          isPlaying = data.payload.mainClock.isRunning || false;
+
+          updateTimeDisplay(clockValue);
+          updateInputFields(clockValue);
+
+          // Update button state
+          const playBtn = document.getElementById("playBtn");
+          if (isPlaying) {
+            playBtn.textContent = "Stop";
+            playBtn.classList.add("playing");
+          }
+        }
+
+        // Get subcomposition info
+        client.getSubcomposition();
+      });
+
+      // Update template info display
+      function updateTemplateInfo(subcomposition) {
+        const templateInfo = document.getElementById("templateInfo");
+        const metadata = templateInfo.querySelector(".metadata");
+
+        if (!subcomposition) {
+          templateInfo.style.display = "none";
+          return;
+        }
+
+        // Show template info
+        templateInfo.style.display = "block";
+
+        // Clear existing metadata
+        metadata.innerHTML = "";
+
+        // Add template metadata
+        const metadataToShow = {
+          "Template Name": subcomposition.name,
+          "Template ID": subcomposition.id,
+          Version: subcomposition.version,
+          Description: subcomposition.description,
+          Created: new Date(subcomposition.createdAt).toLocaleDateString(),
+          Updated: new Date(subcomposition.updatedAt).toLocaleDateString()
+        };
+
+        // Add each metadata field
+        Object.entries(metadataToShow).forEach(([key, value]) => {
+          if (value) {
+            const row = document.createElement("div");
+            row.innerHTML = `
+              <span>${key}:</span>
+              <span>${value}</span>
+            `;
+            metadata.appendChild(row);
+          }
+        });
+
+        // Add any custom fields from the template
+        if (subcomposition.fields) {
+          Object.entries(subcomposition.fields).forEach(([key, value]) => {
+            const row = document.createElement("div");
+            row.innerHTML = `
+              <span>${key}:</span>
+              <span>${value}</span>
+            `;
+            metadata.appendChild(row);
+          });
+        }
+      }
+
+      // Handle state changes (preview/live)
+      client.onItemStateChanged((data) => {
+        console.log("State changed:", data);
+        const liveIndicator = document.getElementById("liveIndicator");
+        if (data.state === "live") {
+          liveIndicator.classList.add("active");
+        } else {
+          liveIndicator.classList.remove("active");
+        }
+      });
+
+      // Cleanup when iframe is unloaded
+      window.addEventListener("unload", () => {
+        if (updateTimeout) {
+          clearTimeout(updateTimeout);
+        }
+        if (timerInterval) {
+          clearInterval(timerInterval);
+        }
+        client.destroy();
+      });
+    </script>
+  </body>
+</html>
