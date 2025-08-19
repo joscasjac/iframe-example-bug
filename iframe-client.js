@@ -1,9 +1,9 @@
-var IframeClient = function(exports) {
+var StreamCraftIframeLib = function(exports) {
   "use strict";var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
 
-  class IframeClient2 {
+  class IframeClient {
     constructor(iframeId) {
       __publicField(this, "iframeId");
       this.iframeId = iframeId;
@@ -69,9 +69,9 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
     }
   }
   if (typeof window !== "undefined") {
-    window.IframeClient = IframeClient2;
+    window.IframeClient = IframeClient;
   }
-  exports.IframeClient = IframeClient2;
+  exports.IframeClient = IframeClient;
   Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
   return exports;
 }({});
